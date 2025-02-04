@@ -1,0 +1,38 @@
+{
+  "perfis": [
+    {
+      "id": "01JK6H74V1RFZ1QJFYMKH1BJFW",
+      "apelido": "pclira",
+      "foto": "😊",
+      "email": "pauloavatarlindo@gmail.com",
+      "status": true,
+      "amigos": []
+    },
+    {
+      "id": "01JK6HWASRS97VMM3ER0Y8HYSP",
+      "apelido": "henrique",
+      "foto": "😊",
+      "email": "hrpaiva3@gmail.com",
+      "status": true,
+      "amigos": [
+        "01JK6H74V1RFZ1QJFYMKH1BJFW"
+      ]
+    }
+  ],
+  "publicacoes": [
+    {
+      "id": "01JK6M9QEZMYWRFHZM2N50MXH7",
+      "conteudo": "Nosferatu é absolute cinema",
+      "dataHora": "2025-02-03T19:23:50.111Z",
+      "id_perfil": "01JK6HWASRS97VMM3ER0Y8HYSP",
+      "apelido_perfil": "henrique"
+    },
+    {
+      "id": "01JK6M8FDB105CXMKH4MQZP8BX",
+      "conteudo": "Click é um ótimo filme",
+      "dataHora": "2025-02-03T19:23:09.099Z",
+      "id_perfil": "01JK6H74V1RFZ1QJFYMKH1BJFW",
+      "apelido_perfil": "pclira"
+    }
+  ]
+}
