@@ -5,10 +5,10 @@
 
 import { rl } from "./app";
 import { RedeSocial } from "./rede_social";
-import { Perfil } from "./perfil";
+import { Perfil, PerfilAvancado } from "./perfil";
 import { Publicacao, PublicacaoAvancada } from "./publicacao";
 import { salvarDados, carregarDados } from "./persistencia";
-import { Interacao, TipoInteracao } from "./interacao"; // Add this line to import TipoInteracao
+import { Interacao, TipoInteracao } from "./interacao";
 import { menuPrincipal } from "./app";
 import chalk from "chalk";
 
@@ -49,7 +49,8 @@ export function limparTela(): void {
 
 
 export function enterParaContinuar(): void {
-    rl.question("\nPressione Enter para voltar ao menu...", () => menuPrincipal());
+    console.log(chalk.gray("======================="));
+    rl.question("Pressione Enter para voltar ao menu...", () => menuPrincipal());
 }
 
 
@@ -60,30 +61,84 @@ export function adicionarPerfil(): void {
     rl.question("Apelido: ", (apelido) => {
         if (!apelido.trim()) {
             console.log(chalk.red("Apelido inválido!"));
-            return setTimeout(() => menuPrincipal(), 5000);
+            enterParaContinuar();
         }
 
         rl.question("Email: ", (email) => {
             if (!email.includes("@")) {
                 console.log(chalk.red("Email inválido!"));
-                return setTimeout(() => menuPrincipal(), 5000);
+                enterParaContinuar();
             }
 
-            try {
-                const perfil = new Perfil(undefined, apelido.toLowerCase(), "😊", email.toLowerCase(), true);
-                redeSocial.adicionarPerfil(perfil);
-                salvarEstado();
+            rl.question("Tipo de Perfil (simples/avancado): ", (tipoPerfil) => {
+                try {
+                    let perfil: Perfil;
 
-                console.log(chalk.green("Perfil adicionado com sucesso!"));
-                console.log(chalk.cyan(`ID do perfil: ${perfil.id}`));
-            } catch (error: any) {
-                console.error(chalk.red(error.message));
-            }
+                    if (tipoPerfil.toLowerCase() === "avancado") {
+                        // Cria um perfil avançado
+                        perfil = new PerfilAvancado(undefined, apelido.toLowerCase(), "😊", email.toLowerCase(), true);
+                        console.log(chalk.green("Perfil avançado adicionado com sucesso!"));
+                    } else if (tipoPerfil.toLowerCase() === "simples") {
+                        // Cria um perfil simples
+                        perfil = new Perfil(undefined, apelido.toLowerCase(), "😊", email.toLowerCase(), true);
+                        console.log(chalk.green("Perfil simples adicionado com sucesso!"));
+                    } else {
+                        throw new Error("Tipo de perfil inválido. Use 'simples' ou 'avancado'.");
+                    }
 
-            setTimeout(() => menuPrincipal(), 5000);
+                    // Adiciona o perfil à rede social
+                    redeSocial.adicionarPerfil(perfil);
+                    salvarEstado();
+
+                    console.log(chalk.cyan(`ID do perfil: ${perfil.id}`));
+                } catch (error: any) {
+                    console.error(chalk.red(error.message));
+                } finally {
+                    enterParaContinuar();
+                }
+            });
         });
     });
 }
+
+
+export function ativarDesativarPerfil(): void {
+    limparTela();
+    console.log(chalk.bold.blue("=== HABILITAR/DESABILITAR PERFIL ==="));
+
+    rl.question("Apelido do Perfil Avançado: ", (apelidoPerfilAvancado) => {
+        rl.question("Apelido do Perfil a ser Modificado: ", (apelidoPerfilModificar) => {
+            rl.question("Habilitar (true) ou Desabilitar (false): ", (status) => {
+                try {
+                    const perfilAvancado = redeSocial.buscarPerfilPorApelido(apelidoPerfilAvancado);
+                    const perfilModificar = redeSocial.buscarPerfilPorApelido(apelidoPerfilModificar);
+
+                    if (!perfilAvancado || !perfilModificar) {
+                        throw new Error("Perfil não encontrado. Verifique os apelidos e tente novamente.");
+                    }
+
+                    if (!(perfilAvancado instanceof PerfilAvancado)) {
+                        throw new Error("Apenas perfis avançados podem habilitar/desabilitar outros perfis.");
+                    }
+
+                    // Converte a entrada do usuário para booleano
+                    const novoStatus = status.toLowerCase() === "true";
+
+                    // Habilita/desabilita o perfil
+                    perfilAvancado.habilitarDesabilitarPerfil(perfilModificar, novoStatus);
+                    salvarEstado();
+
+                    console.log(chalk.green(`Perfil ${perfilModificar.apelido} foi ${novoStatus ? "habilitado" : "desabilitado"} com sucesso!`));
+                } catch (error: any) {
+                    console.log(chalk.red(error.message));
+                } finally {
+                    setTimeout(() => menuPrincipal(), 1000);
+                }
+            });
+        });
+    });
+}
+
 
 export function adicionarPublicacao(): void {
     limparTela();
@@ -122,6 +177,43 @@ export function adicionarPublicacao(): void {
     });
 }
 
+export function adicionarPublicacaoAvancada(): void {
+    limparTela();
+    console.log(chalk.bold.blue("=== ADICIONAR PUBLICAÇÃO AVANÇADA ==="));
+
+    rl.question("Conteúdo: ", (conteudo) => {
+        if (!conteudo.trim()) {
+            console.log(chalk.red("Conteúdo não pode ser vazio!"));
+            return setTimeout(() => menuPrincipal(), 1000);
+        }
+
+        rl.question("Apelido do Perfil: ", (apelido) => {
+            try {
+                const perfil = redeSocial.buscarPerfilPorApelido(apelido);
+                if (perfil) {
+                    // Cria a publicação avançada associando o perfil
+                    const publicacao = new PublicacaoAvancada(undefined, conteudo, new Date(), perfil);
+                    
+                    // Adiciona a publicação avançada à rede social
+                    redeSocial.adicionarPublicacao(publicacao);
+                    
+                    // Salva o estado atual (persistência)
+                    salvarEstado();
+                    
+                    console.log(chalk.green("Publicação avançada adicionada com sucesso!"));
+                    console.log(chalk.cyan(`ID da publicação: ${publicacao.id}`));
+                } else {
+                    console.log(chalk.red("Perfil não encontrado!"));
+                }
+            } catch (error) {
+                console.error(chalk.red("Erro ao adicionar publicação avançada:"), error);
+            } finally {
+                enterParaContinuar();
+            }
+        });
+    });
+}
+
 export function listarPerfis(): void {
     try {
         limparTela();
@@ -130,7 +222,17 @@ export function listarPerfis(): void {
         const perfis = redeSocial.listarPerfis();
 
         if (perfis.length > 0) {
-            perfis.forEach(p => console.log(chalk.cyan(`ID: ${p.id}, Apelido: ${p.apelido}, Email: ${p.email}`)));
+            perfis.forEach(p => {
+                // Verifica se o perfil é avançado ou simples
+                const tipoPerfil = p instanceof PerfilAvancado ? "Avançado" : "Simples";
+
+                // Verifica o status do perfil
+                const statusPerfil = p.status ? "Ativado" : "Desativado";
+
+                console.log(chalk.cyan(
+                    `ID: ${p.id}, Apelido: ${p.apelido}, Email: ${p.email}, Tipo: ${tipoPerfil}, Status: ${statusPerfil}`
+                ));
+            });
         } else {
             console.log(chalk.yellow("Nenhum perfil cadastrado."));
         }
@@ -150,16 +252,21 @@ export function listarPublicacoes(): void {
         const publicacoes = redeSocial.listarPublicacoes();
 
         if (publicacoes.length > 0) {
-            publicacoes.forEach(p => console.log(chalk.cyan
-                (`\nID da publicação: ${p.id}, Data: ${p.dataHora},\nID do Usuário: ${p.perfil.id}, Apelido do Usuário: ${p.perfil.apelido},\nConteúdo: ${p.conteudo}`)));
+            publicacoes.forEach(p => {
+                // Verifica se a publicação é avançada ou simples
+                const tipoPublicacao = p instanceof PublicacaoAvancada ? "Avançada" : "Simples";
+
+                console.log(chalk.cyan(
+                    `\nID da publicação: ${p.id}, Data: ${p.dataHora}\nID do Usuário: ${p.perfil.id}, Apelido do Usuário: ${p.perfil.apelido}\nConteúdo: ${p.conteudo}\nTipo: ${tipoPublicacao}`
+                ));
+            });
         } else {
             console.log(chalk.yellow("Nenhuma publicação encontrada."));
         }
     } catch (error) {
         console.log(chalk.red("Erro ao listar publicações: "), error);
     } finally {
-        console.log(chalk.gray("======================="));
-        rl.question("Pressione Enter para voltar ao menu...", () => menuPrincipal());
+        enterParaContinuar();
     }
 }
 
@@ -167,7 +274,7 @@ export function adicionarAmigo(): void {
     limparTela();
     console.log(chalk.bold.blue("=== ADICIONAR AMIGO ==="));
 
-    rl.question("Apelido do Perfil: ", (apelidoPerfil) => {
+    rl.question("Apelido do Perfil que irá solicitar amizade: ", (apelidoPerfil) => {
         rl.question("Apelido do Amigo: ", (apelidoAmigo) => {
             try {
                 const perfil = redeSocial.buscarPerfilPorApelido(apelidoPerfil);
@@ -254,9 +361,9 @@ export function adicionarInteracao(): void {
     limparTela();
     console.log(chalk.bold.blue("=== ADICIONAR INTERAÇÃO ==="));
 
-    // Mostra a lista de publicações atuais
-    console.log(chalk.bold.blue("\nLista de publicações atuais:"));
-    const publicacoes = redeSocial.listarPublicacoes();
+    // Mostra a lista de publicações avançadas
+    console.log(chalk.bold.blue("\nLista de publicações avançadas:"));
+    const publicacoes = redeSocial.listarPublicacoes().filter(p => p instanceof PublicacaoAvancada);
 
     if (publicacoes.length > 0) {
         publicacoes.forEach(p => {
@@ -265,10 +372,10 @@ export function adicionarInteracao(): void {
             ));
         });
     } else {
-        console.log(chalk.yellow("Nenhuma publicação encontrada."));
+        console.log(chalk.yellow("Nenhuma publicação avançada encontrada."));
     }
 
-    rl.question("\nApelido do Perfil: ", (apelidoPerfil) => {
+    rl.question("\nApelido do Perfil que irá interagir: ", (apelidoPerfil) => {
         rl.question("ID da Publicação: ", (idPublicacao) => {
             rl.question("Tipo de Interação (CURTIR, NAO_CURTIR, RISO, SURPRESA): ", (tipoInteracao) => {
                 try {
@@ -291,7 +398,7 @@ export function adicionarInteracao(): void {
                     // Cria a interação
                     const interacao = new Interacao(Date.now(), tipo, perfil);
 
-                    // Adiciona a interação à publicação
+                    // Adiciona a interação à publicação avançada
                     publicacao.adicionarInteracao(interacao);
                     salvarEstado();
 
@@ -303,5 +410,60 @@ export function adicionarInteracao(): void {
                 }
             });
         });
+    });
+}
+
+
+export function listarInteracoes(): void {
+    limparTela();
+    console.log(chalk.bold.blue("=== LISTAR INTERAÇÕES DE UMA PUBLICAÇÃO ==="));
+
+    // Mostra a lista de publicações avançadas
+    console.log(chalk.bold.blue("\nLista de publicações avançadas:"));
+    const publicacoes = redeSocial.listarPublicacoes().filter(p => p instanceof PublicacaoAvancada);
+
+    if (publicacoes.length > 0) {
+        publicacoes.forEach(p => {
+            console.log(chalk.cyan(
+                `\nID da publicação: ${p.id}, Data: ${p.dataHora},\nID do Usuário: ${p.perfil.id}, Apelido do Usuário: ${p.perfil.apelido},\nConteúdo: ${p.conteudo}`
+            ));
+        });
+    } else {
+        console.log(chalk.yellow("Nenhuma publicação avançada encontrada."));
+        setTimeout(() => menuPrincipal(), 1000);
+        return;
+    }
+
+    rl.question("\nID da Publicação: ", (idPublicacao) => {
+        try {
+            const publicacao = redeSocial.buscarPublicacaoPorId(idPublicacao);
+            if (!publicacao || !(publicacao instanceof PublicacaoAvancada)) {
+                throw new Error("Publicação não encontrada ou não suporta interações avançadas.");
+            }
+
+            limparTela();
+            console.log(chalk.bold.blue("=== PUBLICAÇÃO SELECIONADA ===\n"));
+            console.log(chalk.cyan(
+                `ID da publicação: ${publicacao.id}, Data: ${publicacao.dataHora},\nID do Usuário: ${publicacao.perfil.id}, Apelido do Usuário: ${publicacao.perfil.apelido},\nConteúdo: ${publicacao.conteudo}`
+            ));
+            
+            const interacoes = publicacao.listarInteracoes(); // Lista as interações da publicação
+
+            if (interacoes.length > 0) {
+                console.log(chalk.bold.blue("\nLista de Interações:"));
+                interacoes.forEach(i => {
+                    console.log(chalk.cyan(
+                        `Tipo: ${i.tipo}, Perfil: ${i.perfil.apelido} (ID: ${i.perfil.id})`
+                    ));
+                });
+            } else {
+                console.log(chalk.yellow("Nenhuma interação encontrada para esta publicação."));
+            }
+        } catch (error: any) {
+            console.log(chalk.red(error.message));
+        } finally {
+            console.log(chalk.gray("======================="));
+            rl.question("Pressione Enter para voltar ao menu...", () => menuPrincipal());
+        }
     });
 }

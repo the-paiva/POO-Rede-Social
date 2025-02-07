@@ -8,14 +8,17 @@ import * as readline from "readline";
 import{
     limparTela,
     adicionarPerfil,
+    ativarDesativarPerfil,
     adicionarPublicacao,
+    adicionarPublicacaoAvancada,
     listarPerfis,
     listarPublicacoes,
     adicionarAmigo,
+    adicionarInteracao,
+    listarInteracoes,
     removerAmigo,
     listarAmigos,
     salvarEstado,
-    adicionarInteracao,
 } from "./funcionalidades";
 
 
@@ -30,14 +33,17 @@ export function menuPrincipal(): void {
     limparTela();
     console.log(chalk.bold.blue("======== JACK NET ========"));
     console.log(chalk.green("1. Adicionar Perfil"));
-    console.log(chalk.green("2. Adicionar Publicação"));
-    console.log(chalk.green("3. Listar Perfis"));
-    console.log(chalk.green("4. Listar Publicações"));
-    console.log(chalk.green("5. Adicionar Amigo"));
-    console.log(chalk.green("6. Remover Amigo"));
-    console.log(chalk.green("7. Listar Amigos"));
-    console.log(chalk.green("8. Adicionar Interação"));
-    console.log(chalk.red("9. Sair"));
+    console.log(chalk.green("2. Listar Perfis"));
+    console.log(chalk.green("3. Ativar/Desativar Perfil"))
+    console.log(chalk.green("4. Adicionar Publicação Simples"));
+    console.log(chalk.green("5. Adicionar Publicação Avançada"));
+    console.log(chalk.green("6. Listar Publicações"));
+    console.log(chalk.green("7. Adicionar Interação"));
+    console.log(chalk.green("8. Listar Interações"));
+    console.log(chalk.green("9. Adicionar Amigo"));
+    console.log(chalk.green("10. Remover Amigo"));
+    console.log(chalk.green("11. Listar Amigos"));
+    console.log(chalk.red("0. Sair"));
     console.log(chalk.gray("=========================="));
 
     rl.question("Escolha uma opção: ", (opcao) => {
@@ -47,27 +53,36 @@ export function menuPrincipal(): void {
                     adicionarPerfil();
                     break;
                 case "2":
-                    adicionarPublicacao();
-                    break;
-                case "3":
                     listarPerfis();
                     break;
+                case "3":
+                    ativarDesativarPerfil();
+                    break;
                 case "4":
-                    listarPublicacoes();
+                    adicionarPublicacao();
                     break;
                 case "5":
-                    adicionarAmigo();
+                    adicionarPublicacaoAvancada();
                     break;
                 case "6":
-                    removerAmigo();
+                    listarPublicacoes();
                     break;
                 case "7":
-                    listarAmigos();
+                    adicionarInteracao()
                     break;
                 case "8":
-                    adicionarInteracao();
+                    listarInteracoes();
                     break;
                 case "9":
+                    adicionarAmigo();
+                    break;
+                case "10":
+                    removerAmigo();
+                    break;
+                case "11":
+                    listarAmigos();
+                    break;
+                case "0":
                     console.log(chalk.yellow("\nSaindo..."));
                     salvarEstado();
                     rl.close();

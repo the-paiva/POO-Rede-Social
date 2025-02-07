@@ -1,0 +1,23 @@
+[
+  {
+    "id": "01JKGHB713WKJ8FXK2WWJ4CCA2",
+    "apelido": "henrique",
+    "foto": "😊",
+    "email": "hrpaiva3@gmail.com",
+    "status": true
+  },
+  {
+    "id": "01JKGR0K31KF1EEBHBFHXJ5R5P",
+    "apelido": "pclira",
+    "foto": "😊",
+    "email": "pauloavatarlindo@gmail.com",
+    "status": true
+  },
+  {
+    "id": "01JKGR1BBZYCKM7QP3D6M8QQEY",
+    "apelido": "ely_miranda",
+    "foto": "😊",
+    "email": "ely.miranda@ifpi.edu.br",
+    "status": true
+  }
+]

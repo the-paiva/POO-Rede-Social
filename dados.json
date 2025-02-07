@@ -1,38 +1,31 @@
 {
   "perfis": [
     {
-      "id": "01JK6H74V1RFZ1QJFYMKH1BJFW",
-      "apelido": "pclira",
-      "foto": "😊",
-      "email": "pauloavatarlindo@gmail.com",
-      "status": true,
-      "amigos": []
-    },
-    {
-      "id": "01JK6HWASRS97VMM3ER0Y8HYSP",
+      "id": "01JKF2VYW9SDJGHDA1FP1RYX4E",
       "apelido": "henrique",
       "foto": "😊",
       "email": "hrpaiva3@gmail.com",
       "status": true,
-      "amigos": [
-        "01JK6H74V1RFZ1QJFYMKH1BJFW"
-      ]
+      "amigos": []
+    },
+    {
+      "id": "01JKGBKK95TQH0VKPV940B6W6A",
+      "apelido": "ely_miranda",
+      "foto": "😊",
+      "email": "ely.miranda@ifpi.edu.br",
+      "status": true,
+      "amigos": []
     }
   ],
   "publicacoes": [
     {
-      "id": "01JK6M9QEZMYWRFHZM2N50MXH7",
-      "conteudo": "Nosferatu é absolute cinema",
-      "dataHora": "2025-02-03T19:23:50.111Z",
-      "id_perfil": "01JK6HWASRS97VMM3ER0Y8HYSP",
-      "apelido_perfil": "henrique"
-    },
-    {
-      "id": "01JK6M8FDB105CXMKH4MQZP8BX",
-      "conteudo": "Click é um ótimo filme",
-      "dataHora": "2025-02-03T19:23:09.099Z",
-      "id_perfil": "01JK6H74V1RFZ1QJFYMKH1BJFW",
-      "apelido_perfil": "pclira"
+      "id": "01JKF2WN37KB6HY43AX60N37V0",
+      "conteudo": "Olá, Mundo!",
+      "dataHora": "2025-02-07T02:12:45.799Z",
+      "id_perfil": "01JKF2VYW9SDJGHDA1FP1RYX4E",
+      "apelido_perfil": "henrique",
+      "tipo": "avancada",
+      "interacoes": []
     }
   ]
 }
