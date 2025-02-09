@@ -1,8 +1,3 @@
-// funcionalidades.ts
-
-// Arquivo que contêm as funcionalidades gerais do programa
-
-
 import { rl } from "./app";
 import { RedeSocial } from "./rede_social";
 import { Perfil, PerfilAvancado } from "./perfil";
@@ -11,10 +6,19 @@ import { salvarDados, carregarDados } from "./persistencia";
 import { Interacao, TipoInteracao } from "./interacao";
 import { menuPrincipal } from "./app";
 import chalk from "chalk";
+import {
+    PerfilJaCadastradoError,
+    PerfilNaoAutorizadoError,
+    PerfilInativoError,
+    InteracaoDuplicadaError,
+    AmizadeJaExistenteError,
+    ValorInvalidoException
+} from "./excecoes"
 
 
 const dadosIniciais = carregarDados();
 export const redeSocial = new RedeSocial();
+
 
 // Carregar perfis e publicações iniciais
 dadosIniciais.perfis.forEach(p => {
@@ -24,6 +28,7 @@ dadosIniciais.perfis.forEach(p => {
         console.error(chalk.red("Erro ao carregar perfil:"), error);
     }
 });
+
 
 dadosIniciais.publicacoes.forEach(p => {
     try {
@@ -75,24 +80,24 @@ export function adicionarPerfil(): void {
                     let perfil: Perfil;
 
                     if (tipoPerfil.toLowerCase() === "avancado") {
-                        // Cria um perfil avançado
                         perfil = new PerfilAvancado(undefined, apelido.toLowerCase(), "😊", email.toLowerCase(), true);
                         console.log(chalk.green("Perfil avançado adicionado com sucesso!"));
                     } else if (tipoPerfil.toLowerCase() === "simples") {
-                        // Cria um perfil simples
                         perfil = new Perfil(undefined, apelido.toLowerCase(), "😊", email.toLowerCase(), true);
                         console.log(chalk.green("Perfil simples adicionado com sucesso!"));
                     } else {
-                        throw new Error("Tipo de perfil inválido. Use 'simples' ou 'avancado'.");
+                        throw new ValorInvalidoException("Tipo de perfil inválido. Use 'simples' ou 'avancado'.");
                     }
 
-                    // Adiciona o perfil à rede social
                     redeSocial.adicionarPerfil(perfil);
                     salvarEstado();
-
                     console.log(chalk.cyan(`ID do perfil: ${perfil.id}`));
                 } catch (error: any) {
-                    console.error(chalk.red(error.message));
+                    if (error instanceof PerfilJaCadastradoError) {
+                        console.log(chalk.red(error.message));
+                    } else {
+                        console.log(chalk.red("Erro ao adicionar perfil: "), error.message);
+                    }
                 } finally {
                     enterParaContinuar();
                 }
@@ -114,25 +119,33 @@ export function ativarDesativarPerfil(): void {
                     const perfilModificar = redeSocial.buscarPerfilPorApelido(apelidoPerfilModificar);
 
                     if (!perfilAvancado || !perfilModificar) {
-                        throw new Error("Perfil não encontrado. Verifique os apelidos e tente novamente.");
+                        throw new ValorInvalidoException("Perfil não encontrado. Verifique os apelidos e tente novamente.");
                     }
 
                     if (!(perfilAvancado instanceof PerfilAvancado)) {
-                        throw new Error("Apenas perfis avançados podem habilitar/desabilitar outros perfis.");
+                        throw new PerfilNaoAutorizadoError("Apenas perfis avançados podem habilitar/desabilitar outros perfis.");
                     }
 
-                    // Converte a entrada do usuário para booleano
                     const novoStatus = status.toLowerCase() === "true";
 
-                    // Habilita/desabilita o perfil
-                    perfilAvancado.habilitarDesabilitarPerfil(perfilModificar, novoStatus);
-                    salvarEstado();
-
-                    console.log(chalk.green(`Perfil ${perfilModificar.apelido} foi ${novoStatus ? "habilitado" : "desabilitado"} com sucesso!`));
+                    // Confirmação antes de prosseguir
+                    rl.question(`Tem certeza que deseja ${novoStatus ? "habilitar" : "desabilitar"} o perfil ${perfilModificar.apelido}? (s/n): `, (confirmacao) => {
+                        if (confirmacao.toLowerCase() === "s") {
+                            perfilAvancado.habilitarDesabilitarPerfil(perfilModificar, novoStatus);
+                            salvarEstado();
+                            console.log(chalk.green(`Perfil ${perfilModificar.apelido} foi ${novoStatus ? "habilitado" : "desabilitado"} com sucesso!`));
+                        } else {
+                            console.log(chalk.yellow("Operação cancelada."));
+                        }
+                    });
                 } catch (error: any) {
-                    console.log(chalk.red(error.message));
+                    if (error instanceof PerfilNaoAutorizadoError || error instanceof ValorInvalidoException) {
+                        console.log(chalk.red(error.message));
+                    } else {
+                        console.log(chalk.red("Erro ao modificar perfil: "), error.message);
+                    }
                 } finally {
-                    setTimeout(() => menuPrincipal(), 1000);
+                    enterParaContinuar();
                 }
             });
         });
@@ -153,29 +166,33 @@ export function adicionarPublicacao(): void {
         rl.question("Apelido do Perfil: ", (apelido) => {
             try {
                 const perfil = redeSocial.buscarPerfilPorApelido(apelido);
-                if (perfil) {
-                    // Cria a publicação associando o perfil
-                    const publicacao = new Publicacao(undefined, conteudo, new Date(), perfil);
-                    
-                    // Adiciona a publicação à rede social
-                    redeSocial.adicionarPublicacao(publicacao);
-                    
-                    // Salva o estado atual (persistência)
-                    salvarEstado();
-                    
-                    console.log(chalk.green("Publicação adicionada com sucesso!"));
-                    console.log(chalk.cyan(`ID da publicação: ${publicacao.id}`));
-                } else {
-                    console.log(chalk.red("Perfil não encontrado!"));
+                if (!perfil) {
+                    throw new ValorInvalidoException("Perfil não encontrado!");
                 }
-            } catch (error) {
-                console.error(chalk.red("Erro ao adicionar publicação:"), error);
+
+                if (!perfil.status) {
+                    throw new PerfilInativoError("O perfil está inativo e não pode adicionar publicações.");
+                }
+
+                const publicacao = new Publicacao(undefined, conteudo, new Date(), perfil);
+                redeSocial.adicionarPublicacao(publicacao);
+                salvarEstado();
+
+                console.log(chalk.green("Publicação adicionada com sucesso!"));
+                console.log(chalk.cyan(`ID da publicação: ${publicacao.id}`));
+            } catch (error: any) {
+                if (error instanceof PerfilInativoError || error instanceof ValorInvalidoException) {
+                    console.log(chalk.red(error.message));
+                } else {
+                    console.log(chalk.red("Erro ao adicionar publicação: "), error.message);
+                }
             } finally {
                 enterParaContinuar();
             }
         });
     });
 }
+
 
 export function adicionarPublicacaoAvancada(): void {
     limparTela();
@@ -190,23 +207,26 @@ export function adicionarPublicacaoAvancada(): void {
         rl.question("Apelido do Perfil: ", (apelido) => {
             try {
                 const perfil = redeSocial.buscarPerfilPorApelido(apelido);
-                if (perfil) {
-                    // Cria a publicação avançada associando o perfil
-                    const publicacao = new PublicacaoAvancada(undefined, conteudo, new Date(), perfil);
-                    
-                    // Adiciona a publicação avançada à rede social
-                    redeSocial.adicionarPublicacao(publicacao);
-                    
-                    // Salva o estado atual (persistência)
-                    salvarEstado();
-                    
-                    console.log(chalk.green("Publicação avançada adicionada com sucesso!"));
-                    console.log(chalk.cyan(`ID da publicação: ${publicacao.id}`));
-                } else {
-                    console.log(chalk.red("Perfil não encontrado!"));
+                if (!perfil) {
+                    throw new ValorInvalidoException("Perfil não encontrado!");
                 }
-            } catch (error) {
-                console.error(chalk.red("Erro ao adicionar publicação avançada:"), error);
+
+                if (!perfil.status) {
+                    throw new PerfilInativoError("O perfil está inativo e não pode adicionar publicações.");
+                }
+
+                const publicacao = new PublicacaoAvancada(undefined, conteudo, new Date(), perfil);
+                redeSocial.adicionarPublicacao(publicacao);
+                salvarEstado();
+
+                console.log(chalk.green("Publicação avançada adicionada com sucesso!"));
+                console.log(chalk.cyan(`ID da publicação: ${publicacao.id}`));
+            } catch (error: any) {
+                if (error instanceof PerfilInativoError || error instanceof ValorInvalidoException) {
+                    console.log(chalk.red(error.message));
+                } else {
+                    console.log(chalk.red("Erro ao adicionar publicação avançada: "), error.message);
+                }
             } finally {
                 enterParaContinuar();
             }
@@ -214,61 +234,6 @@ export function adicionarPublicacaoAvancada(): void {
     });
 }
 
-export function listarPerfis(): void {
-    try {
-        limparTela();
-        console.log(chalk.bold.blue("=== LISTA DE PERFIS ==="));
-
-        const perfis = redeSocial.listarPerfis();
-
-        if (perfis.length > 0) {
-            perfis.forEach(p => {
-                // Verifica se o perfil é avançado ou simples
-                const tipoPerfil = p instanceof PerfilAvancado ? "Avançado" : "Simples";
-
-                // Verifica o status do perfil
-                const statusPerfil = p.status ? "Ativado" : "Desativado";
-
-                console.log(chalk.cyan(
-                    `ID: ${p.id}, Apelido: ${p.apelido}, Email: ${p.email}, Tipo: ${tipoPerfil}, Status: ${statusPerfil}`
-                ));
-            });
-        } else {
-            console.log(chalk.yellow("Nenhum perfil cadastrado."));
-        }
-    } catch (error) {
-        console.log(chalk.red("Erro ao listar perfis: "), error);
-    } finally {
-        console.log(chalk.gray("======================="));
-        rl.question("Pressione Enter para voltar ao menu...", () => menuPrincipal());
-    }
-}
-
-export function listarPublicacoes(): void {
-    try {
-        limparTela();
-        console.log(chalk.bold.blue("=== LISTA DE PUBLICAÇÕES ==="));
-
-        const publicacoes = redeSocial.listarPublicacoes();
-
-        if (publicacoes.length > 0) {
-            publicacoes.forEach(p => {
-                // Verifica se a publicação é avançada ou simples
-                const tipoPublicacao = p instanceof PublicacaoAvancada ? "Avançada" : "Simples";
-
-                console.log(chalk.cyan(
-                    `\nID da publicação: ${p.id}, Data: ${p.dataHora}\nID do Usuário: ${p.perfil.id}, Apelido do Usuário: ${p.perfil.apelido}\nConteúdo: ${p.conteudo}\nTipo: ${tipoPublicacao}`
-                ));
-            });
-        } else {
-            console.log(chalk.yellow("Nenhuma publicação encontrada."));
-        }
-    } catch (error) {
-        console.log(chalk.red("Erro ao listar publicações: "), error);
-    } finally {
-        enterParaContinuar();
-    }
-}
 
 export function adicionarAmigo(): void {
     limparTela();
@@ -281,88 +246,34 @@ export function adicionarAmigo(): void {
                 const amigo = redeSocial.buscarPerfilPorApelido(apelidoAmigo);
 
                 if (!perfil || !amigo) {
-                    throw new Error("Perfil ou amigo não encontrado. Verifique os apelidos e tente novamente.");
+                    throw new ValorInvalidoException("Perfil ou amigo não encontrado. Verifique os apelidos e tente novamente.");
+                }
+
+                if (perfil.amigos.includes(amigo)) {
+                    throw new AmizadeJaExistenteError("Essa amizade já existe.");
                 }
 
                 perfil.adicionarAmigo(amigo);
                 salvarEstado();
                 console.log(chalk.green("Amigo adicionado com sucesso!"));
             } catch (error: any) {
-                console.log(chalk.red(error.message));
+                if (error instanceof AmizadeJaExistenteError || error instanceof ValorInvalidoException) {
+                    console.log(chalk.red(error.message));
+                } else {
+                    console.log(chalk.red("Erro ao adicionar amigo: "), error.message);
+                }
             } finally {
-                setTimeout(() => menuPrincipal(), 1000);
+                enterParaContinuar();
             }
         });
     });
 }
 
-export function removerAmigo(): void {
-    limparTela();
-    console.log(chalk.bold.blue("=== REMOVER AMIGO ==="));
-
-    rl.question("Apelido do Perfil: ", (apelidoPerfil) => {
-        rl.question("Apelido do Amigo: ", (apelidoAmigo) => {
-            try {
-                const perfil = redeSocial.buscarPerfilPorApelido(apelidoPerfil);
-                const amigo = redeSocial.buscarPerfilPorApelido(apelidoAmigo);
-
-                if (!perfil || !amigo) {
-                    throw new Error("Perfil ou amigo não encontrado. Verifique os apelidos e tente novamente.");
-                }
-
-                // Verifica se a amizade existe antes de tentar remover
-                if (!perfil.amigos.includes(amigo)) {
-                    throw new Error("Amizade não encontrada. Verifique os apelidos e tente novamente.");
-                }
-
-                // Remove a amizade
-                perfil.removerAmigo(amigo);
-                salvarEstado();
-                console.log(chalk.green("Amigo removido com sucesso!"));
-            } catch (error: any) {
-                console.log(chalk.red(error.message));
-            } finally {
-                setTimeout(() => menuPrincipal(), 1000);
-            }
-        });
-    });
-}
-
-
-export function listarAmigos(): void {
-    limparTela();
-    console.log(chalk.bold.blue("======= LISTA DE AMIGOS ======="));
-
-    rl.question("Apelido do Perfil: ", (apelidoPerfil) => {
-        try {
-            const perfil = redeSocial.buscarPerfilPorApelido(apelidoPerfil);
-
-            if (!perfil) {
-                throw new Error("Perfil não encontrado. Verifique o apelido e tente novamente.");
-            }
-
-            const amigos = perfil.listarAmigos();
-
-            if (amigos.length > 0) {
-                amigos.forEach(a => console.log(chalk.cyan(`ID: ${a.id}, Apelido: ${a.apelido}, Email: ${a.email}`)));
-            } else {
-                console.log(chalk.yellow("Nenhum amigo encontrado."));
-            }
-        } catch (error: any) {
-            console.log(chalk.red(error.message));
-        } finally {
-            console.log(chalk.gray("==============================="));
-            rl.question("Pressione Enter para voltar ao menu...", () => menuPrincipal());
-        }
-    });
-}
 
 export function adicionarInteracao(): void {
     limparTela();
     console.log(chalk.bold.blue("=== ADICIONAR INTERAÇÃO ==="));
 
-    // Mostra a lista de publicações avançadas
-    console.log(chalk.bold.blue("\nLista de publicações avançadas:"));
     const publicacoes = redeSocial.listarPublicacoes().filter(p => p instanceof PublicacaoAvancada);
 
     if (publicacoes.length > 0) {
@@ -380,33 +291,36 @@ export function adicionarInteracao(): void {
             rl.question("Tipo de Interação (CURTIR, NAO_CURTIR, RISO, SURPRESA): ", (tipoInteracao) => {
                 try {
                     const perfil = redeSocial.buscarPerfilPorApelido(apelidoPerfil);
+
                     if (!perfil) {
-                        throw new Error("Perfil não encontrado. Verifique o apelido e tente novamente.");
+                        throw new ValorInvalidoException("Perfil não encontrado. Verifique o apelido e tente novamente.");
                     }
 
                     const publicacao = redeSocial.buscarPublicacaoPorId(idPublicacao);
+
                     if (!publicacao || !(publicacao instanceof PublicacaoAvancada)) {
-                        throw new Error("Publicação não encontrada ou não suporta interações avançadas.");
+                        throw new ValorInvalidoException("Publicação não encontrada ou não suporta interações avançadas.");
                     }
 
-                    // Verifica se o tipo de interação é válido
                     const tipo = TipoInteracao[tipoInteracao as keyof typeof TipoInteracao];
+
                     if (tipo === undefined) {
-                        throw new Error("Tipo de interação inválido. Use CURTIR, NAO_CURTIR, RISO ou SURPRESA.");
+                        throw new ValorInvalidoException("Tipo de interação inválido. Use CURTIR, NAO_CURTIR, RISO ou SURPRESA.");
                     }
 
-                    // Cria a interação
                     const interacao = new Interacao(Date.now(), tipo, perfil);
-
-                    // Adiciona a interação à publicação avançada
                     publicacao.adicionarInteracao(interacao);
                     salvarEstado();
 
                     console.log(chalk.green("Interação adicionada com sucesso!"));
                 } catch (error: any) {
-                    console.log(chalk.red(error.message));
+                    if (error instanceof InteracaoDuplicadaError || error instanceof ValorInvalidoException) {
+                        console.log(chalk.red(error.message));
+                    } else {
+                        console.log(chalk.red("Erro ao adicionar interação: "), error.message);
+                    }
                 } finally {
-                    setTimeout(() => menuPrincipal(), 1000);
+                    enterParaContinuar();
                 }
             });
         });
@@ -414,12 +328,79 @@ export function adicionarInteracao(): void {
 }
 
 
+export function listarPerfis(): void {
+    try {
+        limparTela();
+        console.log(chalk.bold.blue("=== LISTA DE PERFIS ==="));
+
+        const perfis = redeSocial.listarPerfis();
+
+        if (perfis.length > 0) {
+            perfis.forEach(p => {
+                if (!p.status) {
+                    throw new PerfilInativoError(`Perfil ${p.apelido} está inativo.`);
+                }
+
+                const tipoPerfil = p instanceof PerfilAvancado ? "Avançado" : "Simples";
+                const statusPerfil = p.status ? "Ativado" : "Desativado";
+
+                console.log(chalk.cyan(
+                    `ID: ${p.id}, Apelido: ${p.apelido}, Email: ${p.email}, Tipo: ${tipoPerfil}, Status: ${statusPerfil}`
+                ));
+            });
+        } else {
+            console.log(chalk.yellow("Nenhum perfil cadastrado."));
+        }
+    } catch (error) {
+        if (error instanceof PerfilInativoError) {
+            console.log(chalk.red(error.message));
+        } else {
+            console.log(chalk.red("Erro ao listar perfis: "), error);
+        }
+    } finally {
+        enterParaContinuar();
+    }
+}
+
+
+export function listarPublicacoes(): void {
+    try {
+        limparTela();
+        console.log(chalk.bold.blue("=== LISTA DE PUBLICAÇÕES ==="));
+
+        const publicacoes = redeSocial.listarPublicacoes();
+
+        if (publicacoes.length > 0) {
+            publicacoes.forEach(p => {
+                if (!p.perfil.status) {
+                    throw new PerfilInativoError(`Perfil ${p.perfil.apelido} está inativo.`);
+                }
+
+                const tipoPublicacao = p instanceof PublicacaoAvancada ? "Avançada" : "Simples";
+
+                console.log(chalk.cyan(`\nID da publicação: ${p.id}, Data: ${p.dataHora}`));
+                console.log(chalk.cyan(`ID do Usuário: ${p.perfil.id}, Apelido do Usuário: ${p.perfil.apelido}`));
+                console.log(chalk.cyan(`Conteúdo: ${p.conteudo}\nTipo: ${tipoPublicacao}`));
+            });
+        } else {
+            console.log(chalk.yellow("Nenhuma publicação encontrada."));
+        }
+    } catch (error) {
+        if (error instanceof PerfilInativoError) {
+            console.log(chalk.red(error.message));
+        } else {
+            console.log(chalk.red("Erro ao listar publicações: "), error);
+        }
+    } finally {
+        enterParaContinuar();
+    }
+}
+
+
 export function listarInteracoes(): void {
     limparTela();
     console.log(chalk.bold.blue("=== LISTAR INTERAÇÕES DE UMA PUBLICAÇÃO ==="));
 
-    // Mostra a lista de publicações avançadas
-    console.log(chalk.bold.blue("\nLista de publicações avançadas:"));
     const publicacoes = redeSocial.listarPublicacoes().filter(p => p instanceof PublicacaoAvancada);
 
     if (publicacoes.length > 0) {
@@ -430,15 +411,14 @@ export function listarInteracoes(): void {
         });
     } else {
         console.log(chalk.yellow("Nenhuma publicação avançada encontrada."));
-        setTimeout(() => menuPrincipal(), 1000);
-        return;
+        enterParaContinuar();
     }
 
     rl.question("\nID da Publicação: ", (idPublicacao) => {
         try {
             const publicacao = redeSocial.buscarPublicacaoPorId(idPublicacao);
             if (!publicacao || !(publicacao instanceof PublicacaoAvancada)) {
-                throw new Error("Publicação não encontrada ou não suporta interações avançadas.");
+                throw new ValorInvalidoException("Publicação não encontrada ou não suporta interações avançadas.");
             }
 
             limparTela();
@@ -447,11 +427,15 @@ export function listarInteracoes(): void {
                 `ID da publicação: ${publicacao.id}, Data: ${publicacao.dataHora},\nID do Usuário: ${publicacao.perfil.id}, Apelido do Usuário: ${publicacao.perfil.apelido},\nConteúdo: ${publicacao.conteudo}`
             ));
             
-            const interacoes = publicacao.listarInteracoes(); // Lista as interações da publicação
+            const interacoes = publicacao.listarInteracoes();
 
             if (interacoes.length > 0) {
                 console.log(chalk.bold.blue("\nLista de Interações:"));
                 interacoes.forEach(i => {
+                    if (!i.perfil.status) {
+                        throw new PerfilInativoError(`Perfil ${i.perfil.apelido} está inativo.`);
+                    }
+
                     console.log(chalk.cyan(
                         `Tipo: ${i.tipo}, Perfil: ${i.perfil.apelido} (ID: ${i.perfil.id})`
                     ));
@@ -460,10 +444,91 @@ export function listarInteracoes(): void {
                 console.log(chalk.yellow("Nenhuma interação encontrada para esta publicação."));
             }
         } catch (error: any) {
-            console.log(chalk.red(error.message));
+            if (error instanceof ValorInvalidoException || error instanceof PerfilInativoError) {
+                console.log(chalk.red(error.message));
+            } else {
+                console.log(chalk.red("Erro ao listar interações: "), error);
+            }
         } finally {
-            console.log(chalk.gray("======================="));
-            rl.question("Pressione Enter para voltar ao menu...", () => menuPrincipal());
+            enterParaContinuar();
+        }
+    });
+}
+
+
+export function removerAmigo(): void {
+    limparTela();
+    console.log(chalk.bold.blue("=== REMOVER AMIGO ==="));
+
+    rl.question("Apelido do Perfil: ", (apelidoPerfil) => {
+        rl.question("Apelido do Amigo: ", (apelidoAmigo) => {
+            try {
+                const perfil = redeSocial.buscarPerfilPorApelido(apelidoPerfil);
+                const amigo = redeSocial.buscarPerfilPorApelido(apelidoAmigo);
+
+                if (!perfil || !amigo) {
+                    throw new ValorInvalidoException("Perfil ou amigo não encontrado. Verifique os apelidos e tente novamente.");
+                }
+
+                if (!perfil.amigos.includes(amigo)) {
+                    throw new AmizadeJaExistenteError("Amizade não encontrada. Verifique os apelidos e tente novamente.");
+                }
+
+                // Confirmação antes de prosseguir
+                rl.question(`Tem certeza que deseja remover ${amigo.apelido} da sua lista de amigos? (s/n): `, (confirmacao) => {
+                    if (confirmacao.toLowerCase() === "s") {
+                        perfil.removerAmigo(amigo);
+                        salvarEstado();
+                        console.log(chalk.green("Amigo removido com sucesso!"));
+                    } else {
+                        console.log(chalk.yellow("Operação cancelada."));
+                    }
+                });
+            } catch (error: any) {
+                if (error instanceof ValorInvalidoException || error instanceof AmizadeJaExistenteError) {
+                    console.log(chalk.red(error.message));
+                } else {
+                    console.log(chalk.red("Erro ao remover amigo: "), error);
+                }
+            } finally {
+                setTimeout(() => menuPrincipal(), 1000);
+            }
+        });
+    });
+}
+
+
+export function listarAmigos(): void {
+    limparTela();
+    console.log(chalk.bold.blue("======= LISTA DE AMIGOS ======="));
+
+    rl.question("Apelido do Perfil: ", (apelidoPerfil) => {
+        try {
+            const perfil = redeSocial.buscarPerfilPorApelido(apelidoPerfil);
+
+            if (!perfil) {
+                throw new ValorInvalidoException("Perfil não encontrado. Verifique o apelido e tente novamente.");
+            }
+
+            if (!perfil.status) {
+                throw new PerfilInativoError(`Perfil ${perfil.apelido} está inativo.`);
+            }
+
+            const amigos = perfil.listarAmigos();
+
+            if (amigos.length > 0) {
+                amigos.forEach(a => console.log(chalk.cyan(`ID: ${a.id}, Apelido: ${a.apelido}, Email: ${a.email}`)));
+            } else {
+                console.log(chalk.yellow("Nenhum amigo encontrado."));
+            }
+        } catch (error: any) {
+            if (error instanceof ValorInvalidoException || error instanceof PerfilInativoError) {
+                console.log(chalk.red(error.message));
+            } else {
+                console.log(chalk.red("Erro ao listar amigos: "), error);
+            }
+        } finally {
+            enterParaContinuar();
         }
     });
 }

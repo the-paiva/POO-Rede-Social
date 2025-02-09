@@ -1,6 +1,20 @@
 [
   {
-    "id": "01JKGR1BBZYCKM7QP3D6M8QQEY",
+    "id": "01JKNRSK4SNH9P5DAPHN8QMXQ6",
+    "apelido": "ely_miranda",
+    "foto": "😊",
+    "email": "ely.miranda@ifpi.edu.br",
+    "status": true,
+    "tipo": "avancado",
+    "amigos": []
+  },
+  {
+    "id": "01JKNSRN44H17KNN405PSNYMR5",
+    "apelido": "pclira",
+    "foto": "😊",
+    "email": "pauloavatarlindo@gmail.com",
+    "status": true,
+    "tipo": "avancado",
     "amigos": []
   }
 ]

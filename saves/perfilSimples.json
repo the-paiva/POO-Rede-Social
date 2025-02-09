@@ -1,23 +1,18 @@
 [
   {
-    "id": "01JKGHB713WKJ8FXK2WWJ4CCA2",
+    "id": "01JKNQP2902G2RZ34MDSZBZBP4",
     "apelido": "henrique",
     "foto": "😊",
     "email": "hrpaiva3@gmail.com",
-    "status": true
+    "status": true,
+    "tipo": "simples"
   },
   {
-    "id": "01JKGR0K31KF1EEBHBFHXJ5R5P",
-    "apelido": "pclira",
+    "id": "01JKNSS4Y4Q9BAB80ZPAGRGKFH",
+    "apelido": "lucasbrg",
     "foto": "😊",
-    "email": "pauloavatarlindo@gmail.com",
-    "status": true
-  },
-  {
-    "id": "01JKGR1BBZYCKM7QP3D6M8QQEY",
-    "apelido": "ely_miranda",
-    "foto": "😊",
-    "email": "ely.miranda@ifpi.edu.br",
-    "status": true
+    "email": "tribal@outlook.com",
+    "status": true,
+    "tipo": "simples"
   }
 ]

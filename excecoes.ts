@@ -1,6 +1,4 @@
-// exceptions.ts
-
-
+// Exceção para quando um perfil já está cadastrado
 export class PerfilJaCadastradoError extends Error {
     constructor(message: string) {
         super(message);
@@ -8,7 +6,7 @@ export class PerfilJaCadastradoError extends Error {
     }
 }
 
-
+// Exceção para quando um perfil não está autorizado a realizar uma ação
 export class PerfilNaoAutorizadoError extends Error {
     constructor(message: string) {
         super(message);
@@ -16,7 +14,7 @@ export class PerfilNaoAutorizadoError extends Error {
     }
 }
 
-
+// Exceção para quando um perfil está inativo
 export class PerfilInativoError extends Error {
     constructor(message: string) {
         super(message);
@@ -24,7 +22,7 @@ export class PerfilInativoError extends Error {
     }
 }
 
-
+// Exceção para quando uma interação já foi feita
 export class InteracaoDuplicadaError extends Error {
     constructor(message: string) {
         super(message);
@@ -32,7 +30,7 @@ export class InteracaoDuplicadaError extends Error {
     }
 }
 
-
+// Exceção para quando uma amizade já existe
 export class AmizadeJaExistenteError extends Error {
     constructor(message: string) {
         super(message);
@@ -40,7 +38,7 @@ export class AmizadeJaExistenteError extends Error {
     }
 }
 
-
+// Exceção para valores inválidos
 export class ValorInvalidoException extends Error {
     constructor(message: string) {
         super(message);

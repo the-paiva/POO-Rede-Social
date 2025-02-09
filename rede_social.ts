@@ -1,8 +1,5 @@
-// redeSocial.ts
-
-import { Perfil, PerfilAvancado } from "./perfil";
-import { Publicacao, PublicacaoAvancada } from "./publicacao";
-import { Interacao } from "./interacao";
+import { Perfil } from "./perfil";
+import { Publicacao } from "./publicacao";
 import {
     PerfilJaCadastradoError,
     PerfilNaoAutorizadoError,
@@ -12,12 +9,13 @@ import {
     ValorInvalidoException,
 } from "./excecoes";
 
+// Classe que representa a rede social
 export class RedeSocial {
     private perfis: Perfil[] = [];
     private publicacoes: Publicacao[] = [];
     private solicitacoesAmizade: Map<Perfil, Perfil> = new Map();
 
-    // Método para adicionar um perfil
+    // Adiciona um perfil à rede social
     adicionarPerfil(perfil: Perfil): void {
         if (this.perfis.some(p => p.apelido.toLowerCase() === perfil.apelido.toLowerCase())) {
             throw new PerfilJaCadastradoError("Apelido já está em uso.");
@@ -30,7 +28,7 @@ export class RedeSocial {
         this.perfis.push(perfil);
     }
 
-    // Método para buscar um perfil por email
+    // Busca um perfil por email
     buscarPerfilPorEmail(email: string): Perfil | undefined {
         if (!email.includes("@")) {
             throw new ValorInvalidoException("Email inválido.");
@@ -39,7 +37,7 @@ export class RedeSocial {
         return this.perfis.find(p => p.email === email);
     }
 
-    // Método para buscar um perfil por apelido
+    // Busca um perfil por apelido
     buscarPerfilPorApelido(apelido: string): Perfil | undefined {
         if (!apelido.trim()) {
             throw new ValorInvalidoException("Apelido inválido.");
@@ -48,12 +46,12 @@ export class RedeSocial {
         return this.perfis.find(p => p.apelido === apelido);
     }
 
-    // Método para listar perfis
+    // Lista todos os perfis
     listarPerfis(): Perfil[] {
         return this.perfis;
     }
 
-    // Método para adicionar uma publicação
+    // Adiciona uma publicação à rede social
     adicionarPublicacao(publicacao: Publicacao): void {
         if (!publicacao.perfil.status) {
             throw new PerfilInativoError("Perfil inativo não pode adicionar publicações.");
@@ -62,12 +60,12 @@ export class RedeSocial {
         this.publicacoes.push(publicacao);
     }
 
-    // Método para listar publicações
+    // Lista todas as publicações ordenadas por data
     listarPublicacoes(): Publicacao[] {
         return this.publicacoes.sort((a, b) => b.dataHora.getTime() - a.dataHora.getTime());
     }
 
-    // Método para buscar uma publicação por ID
+    // Busca uma publicação por ID
     buscarPublicacaoPorId(id: string): Publicacao | undefined {
         if (!id.trim()) {
             throw new ValorInvalidoException("ID inválido.");
@@ -76,7 +74,7 @@ export class RedeSocial {
         return this.publicacoes.find(p => p.id === id);
     }
 
-    // Método para enviar solicitação de amizade
+    // Envia uma solicitação de amizade
     enviarSolicitacaoAmizade(de: Perfil, para: Perfil): void {
         if (!de.status || !para.status) {
             throw new PerfilInativoError("Perfis inativos não podem enviar solicitações de amizade.");
@@ -89,7 +87,7 @@ export class RedeSocial {
         this.solicitacoesAmizade.set(de, para);
     }
 
-    // Método para aceitar solicitação de amizade
+    // Aceita uma solicitação de amizade
     aceitarSolicitacaoAmizade(de: Perfil, para: Perfil): void {
         if (!de.status || !para.status) {
             throw new PerfilInativoError("Perfis inativos não podem aceitar solicitações de amizade.");
@@ -104,7 +102,7 @@ export class RedeSocial {
         this.solicitacoesAmizade.delete(de);
     }
 
-    // Método para recusar solicitação de amizade
+    // Recusa uma solicitação de amizade
     recusarSolicitacaoAmizade(de: Perfil, para: Perfil): void {
         if (!this.solicitacoesAmizade.has(de)) {
             throw new PerfilNaoAutorizadoError("Solicitação de amizade não encontrada.");
