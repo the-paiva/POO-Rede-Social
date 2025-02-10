@@ -1,18 +1,13 @@
 [
   {
-    "id": "01JKNQP2902G2RZ34MDSZBZBP4",
-    "apelido": "henrique",
+    "id": "01JKRHD6HTZN1BVNE9T628J0F6",
+    "apelido": "hfpaiva",
     "foto": "😊",
     "email": "hrpaiva3@gmail.com",
     "status": true,
-    "tipo": "simples"
-  },
-  {
-    "id": "01JKNSS4Y4Q9BAB80ZPAGRGKFH",
-    "apelido": "lucasbrg",
-    "foto": "😊",
-    "email": "tribal@outlook.com",
-    "status": true,
-    "tipo": "simples"
+    "tipo": "simples",
+    "amigos": [
+      "01JKRH9Q6TQ03M5B6YJQ2N8438"
+    ]
   }
 ]

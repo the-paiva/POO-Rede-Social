@@ -137,6 +137,7 @@ export function ativarDesativarPerfil(): void {
                         } else {
                             console.log(chalk.yellow("Operação cancelada."));
                         }
+                        enterParaContinuar(); // Aguarda o usuário pressionar Enter para continuar
                     });
                 } catch (error: any) {
                     if (error instanceof PerfilNaoAutorizadoError || error instanceof ValorInvalidoException) {
@@ -144,8 +145,7 @@ export function ativarDesativarPerfil(): void {
                     } else {
                         console.log(chalk.red("Erro ao modificar perfil: "), error.message);
                     }
-                } finally {
-                    enterParaContinuar();
+                    enterParaContinuar(); // Aguarda o usuário pressionar Enter para continuar
                 }
             });
         });
@@ -337,26 +337,25 @@ export function listarPerfis(): void {
 
         if (perfis.length > 0) {
             perfis.forEach(p => {
-                if (!p.status) {
-                    throw new PerfilInativoError(`Perfil ${p.apelido} está inativo.`);
-                }
-
                 const tipoPerfil = p instanceof PerfilAvancado ? "Avançado" : "Simples";
                 const statusPerfil = p.status ? "Ativado" : "Desativado";
 
-                console.log(chalk.cyan(
-                    `ID: ${p.id}, Apelido: ${p.apelido}, Email: ${p.email}, Tipo: ${tipoPerfil}, Status: ${statusPerfil}`
-                ));
+                // Verifica se o perfil está inativo e exibe uma mensagem destacada
+                if (!p.status) {
+                    console.log(chalk.red(
+                        `ID: ${p.id}, Apelido: ${p.apelido}, Email: ${p.email}, Tipo: ${tipoPerfil}, Status: ${statusPerfil} (Inativo)`
+                    ));
+                } else {
+                    console.log(chalk.cyan(
+                        `ID: ${p.id}, Apelido: ${p.apelido}, Email: ${p.email}, Tipo: ${tipoPerfil}, Status: ${statusPerfil}`
+                    ));
+                }
             });
         } else {
             console.log(chalk.yellow("Nenhum perfil cadastrado."));
         }
     } catch (error) {
-        if (error instanceof PerfilInativoError) {
-            console.log(chalk.red(error.message));
-        } else {
-            console.log(chalk.red("Erro ao listar perfis: "), error);
-        }
+        console.log(chalk.red("Erro ao listar perfis: "), error);
     } finally {
         enterParaContinuar();
     }
@@ -460,7 +459,7 @@ export function removerAmigo(): void {
     limparTela();
     console.log(chalk.bold.blue("=== REMOVER AMIGO ==="));
 
-    rl.question("Apelido do Perfil: ", (apelidoPerfil) => {
+    rl.question("Apelido do Perfil que irá realizar a operação : ", (apelidoPerfil) => {
         rl.question("Apelido do Amigo: ", (apelidoAmigo) => {
             try {
                 const perfil = redeSocial.buscarPerfilPorApelido(apelidoPerfil);
@@ -483,6 +482,7 @@ export function removerAmigo(): void {
                     } else {
                         console.log(chalk.yellow("Operação cancelada."));
                     }
+                    enterParaContinuar(); // Aguarda o usuário pressionar Enter para continuar
                 });
             } catch (error: any) {
                 if (error instanceof ValorInvalidoException || error instanceof AmizadeJaExistenteError) {
@@ -490,8 +490,7 @@ export function removerAmigo(): void {
                 } else {
                     console.log(chalk.red("Erro ao remover amigo: "), error);
                 }
-            } finally {
-                setTimeout(() => menuPrincipal(), 1000);
+                enterParaContinuar(); // Aguarda o usuário pressionar Enter para continuar
             }
         });
     });

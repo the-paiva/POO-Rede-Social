@@ -29,6 +29,18 @@ export function carregarDados(): { perfis: Perfil[], publicacoes: Publicacao[] }
             perfisMap.set(p.id, perfil);
         });
 
+        // Carrega amizades (perfil simples)
+        perfisSimples.forEach((p: any) => {
+            const perfilSimples = perfisMap.get(p.id)!;
+
+            if (perfilSimples instanceof Perfil) {
+                p.amigos.forEach((idAmigo: string) => {
+                    const amigo = perfisMap.get(idAmigo);
+                    if (amigo) perfilSimples.adicionarAmigo(amigo);
+                });
+            }
+        });
+
         // Carrega perfis avançados
         perfisAvancados.forEach((p: any) => {
             let perfil: Perfil = new PerfilAvancado(p.id, p.apelido, p.foto, p.email, p.status);
@@ -37,12 +49,12 @@ export function carregarDados(): { perfis: Perfil[], publicacoes: Publicacao[] }
 
         // Carrega amizades (perfil avançado)
         perfisAvancados.forEach((p: any) => {
-            const perfil = perfisMap.get(p.id)!;
+            const perfilAvancado = perfisMap.get(p.id)!;
 
-            if (perfil instanceof PerfilAvancado) {
+            if (perfilAvancado instanceof PerfilAvancado) {
                 p.amigos.forEach((idAmigo: string) => {
                     const amigo = perfisMap.get(idAmigo);
-                    if (amigo) perfil.adicionarAmigo(amigo);
+                    if (amigo) perfilAvancado.adicionarAmigo(amigo);
                 });
             }
         });
@@ -109,7 +121,8 @@ export function salvarDados(perfis: Perfil[], publicacoes: Publicacao[]): void {
                 foto: perfil.foto,
                 email: perfil.email,
                 status: perfil.status,
-                tipo: "simples" // Todos aqui são simples
+                tipo: "simples", // Todos aqui são simples
+                amigos: perfil.amigos.map(amigo => amigo.id)
             }));
 
         const perfisAvancados = perfis
